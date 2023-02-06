@@ -1,0 +1,127 @@
+Code structure 
+
+Basic overview:
+
+mtp/datasets -> all datasets for experiments (fb,mami,harmeme)
+mtp/models -> code for three models (roberta+resnet,uniter,visualbert)
+mtp/attacks -> experiments relating to ocr based attacks and salt and pepper noise and blurring of text
+mtp/utils -> python scripts for other small work
+
+mtp/datasets
+[
+    All datasets are contained in mtp/datasets/fb, mtp/datasets/mami and mtp/datasets/harmeme respectively. 
+
+    Inside every dataset following folders are present:
+
+    files folder
+    {
+    the files folder has the three train, test and val files labelled as train.json, test.json, and val.json
+
+    Example of any one file: mtp/datasets/fb/files/test.json
+
+    Each json file is a list of all data points in that split, with each data point being a dict containing path to the image, the text and the label (0 for non hate 1 for hate)
+    One example is shown below:
+        {
+            "img": "37405.png",
+            "label": 1,
+            "text": "introducing fidget spinner for women"
+        }
+    }
+
+    files_new folder
+    {
+    Contains a test.json file with the extracted text from different attacks using OCR only for the TEST set 
+    One example is shown below:
+        {
+            "img": "37405.png",
+            "label": 1,
+            "text": "introducing fidget spinner for women",
+            "text_ocr": "introducing IJ fidget spinner for women ",
+            "text_s&p": "introducing Xl fidget spinner for womem ",
+            "text_s&p_0.4": "introducing  fidget spinnerior Wcmed ",
+            "text_spread_1": "introducing fidget sninnerfor women ",
+            "text_newsprint": "introducing fidget spinnerifor women ",
+            "text_spread_3": "introducing Ku fidget spinner for womem) ",
+            "text_blur_text_5": "introducing Il fidget Spinnerifor womeM ",
+            "text_s&p_text_0.2": "introducing fidget spinner for women "
+        }
+    }
+
+    img folder
+    {
+    Has all images contained in all three splits without any attacks 
+    }
+
+
+    img_feats folder
+    {
+    Used for uniter and visualbert model
+    Contains the faster rcnn extracted features for each split in train.tsv, val.tsv, and test.tsv. All other tsv files contain the features extracted for the test set using different attacks (files named accordingly)
+    }
+
+    All other folders in each dataset contain the attacked test set according to the name mentioned in the folder.
+    Example s&p_0.4 -> salt and pepper noise with p = 0.4
+]
+
+
+mtp/attacks (use conda activate hate_meme before running all codes)
+
+[
+
+    For each file following parameters have to be set:
+        dataset = 'harmeme' set dataset name from fb, mami or harmeme
+        attack = 's&p_0.4' set attack name 
+        
+    Three important files:
+    img_filter.py: contains code for salt and pepper noise and gaussian noise, simply run using python img_filter.py and set           appropriate paths in the file
+
+    selective_text_attacks.py: code for obtaining bounding box in text and applying a filter only on that particular region, two       filters are implemented, salt and pepper noise and blur text. simply set paths given in the file and run using python. 
+        
+    ocr_attacks.py: used for reading images from an attacked folder, running OCR on it and adding the text to the test.json in         files_new
+]
+
+mtp/models 
+[
+mtp/models/roberta_resnet (use conda activate hate_meme before running all codes)
+{
+saved/ -> folder containing all saved models
+roberta_resnet.py -> main file used for training, if file is run once, three models are trained for the three datasets one after the other in a loop. All hyperparameters can be set from lines 25 in the code. The model named to be saved should be        changed in lines 156 and 196 before running any code, the exp name should be added to the dataset_name. At the end of             training of each model, the final F1 score is printed on the screen. 
+adv_attacks.py -> running results of all attacks on the test set of a dataset, the dataset name is set on line 212 and the        model to be loaded is correctly set on line 219. All the results will be printed at the end in a dict on the screen with          results for each dataset and for each attack.
+Example dict is shown below:
+{'original_text': 0.7656052489014626, 'ocr': 0.7452264387322629, 'spread_1': 0.5624768261030774, 'spread_3': 0.4920142332147232, 'newsprint': 0.4752985851656765, 's&p': 0.5688992974238876, 's&p_0.4': 0.51811558691888, 'blur_text_5': 0.5810902964418949, 's&p_text_0.2': 0.5582242225859246}        
+}
+dataloader.py -> dataloader file for normal training of roberta_resnet.py
+dataloader_contrastive.py -> dataloader file for contrastive training of roberta_resnet.py
+roberta_resnet_contrastive.py -> file for training model using contrastive loss on merged embeddings. 
+roberta_resnet_contrastive_image_text.py -> file for training model using contrastive loss on image and text embeddings separately. 
+}
+mtp/models/uniter (use conda activate vilio before running all codes)
+{
+saved/ -> folder containing all saved models
+uniter.py -> main code for training and saving models, ensure name of dataset is correctly set on line 47. Model will be saved with same name as dataset. 
+testing.py -> code for running and getting results of all adv attacks
+dataloader.py -> code for dataloading
+Note: all other files and folders are taken from the vilio github repo (https://github.com/Muennighoff/vilio)
+}
+mtp/models/visual_bert (use conda activate vilio before running all codes)
+{
+saved/ -> folder containing all saved models
+visual_bert.py -> main code for training and saving models, ensure name of dataset is correctly set on line 47. Model will be saved with same name as dataset. 
+testing.py -> code for running and getting results of all adv attacks
+dataloader.py -> code for dataloading
+Note: all other files and folders are taken from the vilio github repo (https://github.com/Muennighoff/vilio)
+}
+]
+
+mtp/utils
+[
+Just a bunch of python scripts, not needed anymore. 
+]
+
+
+
+
+
+
+
+
